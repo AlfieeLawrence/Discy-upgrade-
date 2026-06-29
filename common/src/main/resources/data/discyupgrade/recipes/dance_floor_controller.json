@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "RGR",
+    "GDG",
+    "RGR"
+  ],
+  "key": {
+    "R": { "item": "minecraft:redstone" },
+    "G": { "item": "minecraft:gold_ingot" },
+    "D": { "item": "discyupgrade:dance_floor_tile" }
+  },
+  "result": {
+    "item": "discyupgrade:dance_floor_controller"
+  }
+}

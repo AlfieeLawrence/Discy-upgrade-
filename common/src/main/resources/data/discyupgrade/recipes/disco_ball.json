@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " G ",
+    "GIG",
+    " I "
+  ],
+  "key": {
+    "G": { "item": "minecraft:gold_ingot" },
+    "I": { "item": "minecraft:iron_bars" }
+  },
+  "result": {
+    "item": "discyupgrade:disco_ball"
+  }
+}

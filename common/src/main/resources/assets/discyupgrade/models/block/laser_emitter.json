@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "discyupgrade:block/laser_emitter_side",
+    "front": "discyupgrade:block/laser_emitter_front",
+    "side": "discyupgrade:block/laser_emitter_side"
+  }
+}

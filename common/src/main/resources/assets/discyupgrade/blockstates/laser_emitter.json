@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "discyupgrade:block/laser_emitter" },
+    "facing=south": { "model": "discyupgrade:block/laser_emitter", "y": 180 },
+    "facing=west": { "model": "discyupgrade:block/laser_emitter", "y": 270 },
+    "facing=east": { "model": "discyupgrade:block/laser_emitter", "y": 90 }
+  }
+}

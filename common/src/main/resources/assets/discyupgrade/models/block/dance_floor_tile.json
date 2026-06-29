@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "discyupgrade:block/dance_floor_tile",
+    "particle": "discyupgrade:block/dance_floor_tile"
+  }
+}
