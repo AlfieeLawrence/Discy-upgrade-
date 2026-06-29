@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" Q ","GRG"," Q "],"key":{"G":{"item":"minecraft:glowstone_dust"},"R":{"item":"minecraft:redstone"},"Q":{"item":"minecraft:quartz"}},"result":{"item":"discyupgrade:strobe_light","count":2}}

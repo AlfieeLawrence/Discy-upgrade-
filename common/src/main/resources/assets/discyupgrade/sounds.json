@@ -1,0 +1,18 @@
+{
+  "disco_ball_spin": {
+    "subtitle": "subtitles.discyupgrade.disco_ball_spin",
+    "sounds": ["discyupgrade:disco_ball_spin"]
+  },
+  "floor_tick": {
+    "subtitle": "subtitles.discyupgrade.floor_tick",
+    "sounds": ["discyupgrade:floor_tick"]
+  },
+  "laser_hum": {
+    "subtitle": "subtitles.discyupgrade.laser_hum",
+    "sounds": ["discyupgrade:laser_hum"]
+  },
+  "strobe_click": {
+    "subtitle": "subtitles.discyupgrade.strobe_click",
+    "sounds": ["discyupgrade:strobe_click"]
+  }
+}

@@ -31,6 +31,16 @@ public class DiscyUpgradeForgeClient {
                 return 0x2A2A2A;
             }, BlockRegistry.DANCE_FLOOR_TILE.get());
 
+            ColorHandlerRegistry.registerBlockColors((state, level, pos, tintIndex) -> {
+                if (level != null && pos != null) {
+                    var be = level.getBlockEntity(pos);
+                    if (be instanceof net.discyupgrade.core.block.PartyLightBlockEntity light && light.isPowered()) {
+                        return 0xFF000000 | light.getColor();
+                    }
+                }
+                return 0xFF333333;
+            }, BlockRegistry.PARTY_LIGHT.get());
+
             BlockEntityRendererRegistry.register(BlockEntityRegistry.DISCO_BALL.get(), DiscoBallRenderer::new);
             BlockEntityRendererRegistry.register(BlockEntityRegistry.LASER_EMITTER.get(), LaserEmitterRenderer::new);
         });

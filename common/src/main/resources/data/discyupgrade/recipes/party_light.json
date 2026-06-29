@@ -1,0 +1,1 @@
+{"type":"minecraft:crafting_shaped","pattern":[" G ","GRG"," G "],"key":{"G":{"item":"minecraft:glowstone_dust"},"R":{"item":"minecraft:redstone"}},"result":{"item":"discyupgrade:party_light","count":2}}

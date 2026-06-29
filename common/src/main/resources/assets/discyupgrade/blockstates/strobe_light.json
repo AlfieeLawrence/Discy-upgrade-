@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "lit=false": { "model": "discyupgrade:block/strobe_light" },
+    "lit=true": { "model": "discyupgrade:block/strobe_light_lit" }
+  }
+}

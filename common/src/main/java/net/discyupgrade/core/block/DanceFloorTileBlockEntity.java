@@ -14,34 +14,26 @@ public class DanceFloorTileBlockEntity extends BlockEntity {
     private static final int DEFAULT_COLOR = 0x2A2A2A;
 
     private UUID groupId;
+    private int baseColor = DEFAULT_COLOR;
     private int color = DEFAULT_COLOR;
 
     public DanceFloorTileBlockEntity(BlockPos pos, BlockState state) {
         super(BlockEntityRegistry.DANCE_FLOOR_TILE.get(), pos, state);
     }
 
-    public UUID getGroupId() {
-        return groupId;
-    }
+    public UUID getGroupId() { return groupId; }
+    public void setGroupId(UUID groupId) { this.groupId = groupId; }
 
-    public void setGroupId(UUID groupId) {
-        this.groupId = groupId;
-    }
-
-    /** @deprecated use {@link #getGroupId()} */
-    public UUID getNetworkId() {
-        return groupId;
-    }
-
-    public void setNetworkId(UUID networkId) {
-        this.groupId = networkId;
-    }
-
-    public int getColor() {
-        return color;
-    }
+    public int getBaseColor() { return baseColor; }
+    public int getColor() { return color; }
 
     public void setColor(int color) {
+        this.baseColor = color & 0xFFFFFF;
+        this.color = this.baseColor;
+        setChanged();
+    }
+
+    public void setDisplayColor(int color) {
         this.color = color & 0xFFFFFF;
         setChanged();
     }
@@ -49,22 +41,21 @@ public class DanceFloorTileBlockEntity extends BlockEntity {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        if (tag.hasUUID("GroupId")) {
-            groupId = tag.getUUID("GroupId");
-        } else if (tag.hasUUID("NetworkId")) {
-            groupId = tag.getUUID("NetworkId");
-        } else {
-            groupId = null;
+        if (tag.hasUUID("GroupId")) groupId = tag.getUUID("GroupId");
+        else if (tag.hasUUID("NetworkId")) groupId = tag.getUUID("NetworkId");
+        else groupId = null;
+        baseColor = tag.contains("BaseColor") ? tag.getInt("BaseColor") : tag.getInt("Color");
+        color = tag.contains("Color") ? tag.getInt("Color") : baseColor;
+        if (!tag.contains("BaseColor") && !tag.contains("Color")) {
+            baseColor = color = DEFAULT_COLOR;
         }
-        color = tag.contains("Color") ? tag.getInt("Color") : DEFAULT_COLOR;
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        if (groupId != null) {
-            tag.putUUID("GroupId", groupId);
-        }
+        if (groupId != null) tag.putUUID("GroupId", groupId);
+        tag.putInt("BaseColor", baseColor);
         tag.putInt("Color", color);
     }
 

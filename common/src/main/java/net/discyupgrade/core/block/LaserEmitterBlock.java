@@ -55,6 +55,10 @@ public class LaserEmitterBlock extends BaseEntityBlock {
                 if (powered != emitter.isPowered()) {
                     emitter.setPowered(powered);
                     level.sendBlockUpdated(pos, state, state, 3);
+                    if (powered) {
+                        level.playSound(null, pos, net.discyupgrade.core.registry.SoundEventRegistry.LASER_HUM.get(),
+                                net.minecraft.sounds.SoundSource.BLOCKS, 0.4f, 1.0f);
+                    }
                 }
             }
         }

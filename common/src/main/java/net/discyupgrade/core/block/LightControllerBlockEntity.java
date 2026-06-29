@@ -6,14 +6,45 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.discyupgrade.core.floor.FloorAnimationEngine;
+import net.discyupgrade.core.floor.FloorPattern;
+import net.discyupgrade.core.floor.FloorPatternPresets;
 import net.discyupgrade.core.registry.BlockEntityRegistry;
 
 import java.util.*;
 
 public class LightControllerBlockEntity extends BlockEntity {
+    public record GroupAnimSettings(FloorPattern pattern, int speed, boolean playing, boolean syncDisco) {
+        public static GroupAnimSettings defaults() {
+            return new GroupAnimSettings(FloorPattern.STATIC, 5, false, false);
+        }
+
+        public CompoundTag toTag() {
+            CompoundTag tag = new CompoundTag();
+            tag.putInt("Pattern", pattern.id());
+            tag.putInt("Speed", speed);
+            tag.putBoolean("Playing", playing);
+            tag.putBoolean("SyncDisco", syncDisco);
+            return tag;
+        }
+
+        public static GroupAnimSettings fromTag(CompoundTag tag) {
+            return new GroupAnimSettings(
+                    FloorPattern.fromId(tag.getInt("Pattern")),
+                    tag.getInt("Speed"),
+                    tag.getBoolean("Playing"),
+                    tag.getBoolean("SyncDisco"));
+        }
+    }
+
     private final List<UUID> linkedFloorGroups = new ArrayList<>();
     private final List<BlockPos> linkedDiscoBalls = new ArrayList<>();
     private final List<BlockPos> linkedLasers = new ArrayList<>();
+    private final List<BlockPos> linkedPartyLights = new ArrayList<>();
+    private final List<BlockPos> linkedStrobes = new ArrayList<>();
+    private final Map<UUID, GroupAnimSettings> groupSettings = new HashMap<>();
+    private final Map<String, Map<Long, Integer>> presets = new LinkedHashMap<>();
+
     private UUID selectedFloorGroup;
     private boolean discoSpinEnabled = true;
 
@@ -21,46 +52,59 @@ public class LightControllerBlockEntity extends BlockEntity {
         super(BlockEntityRegistry.LIGHT_CONTROLLER.get(), pos, state);
     }
 
-    public List<UUID> getLinkedFloorGroups() {
-        return Collections.unmodifiableList(linkedFloorGroups);
+    @Override
+    public void setLevel(net.minecraft.world.level.Level level) {
+        super.setLevel(level);
+        if (level != null && !level.isClientSide) {
+            FloorAnimationEngine.registerController(this);
+        }
     }
 
-    public List<BlockPos> getLinkedDiscoBalls() {
-        return Collections.unmodifiableList(linkedDiscoBalls);
+    @Override
+    public void setRemoved() {
+        if (level != null && !level.isClientSide) {
+            FloorAnimationEngine.unregisterController(worldPosition);
+        }
+        super.setRemoved();
     }
 
-    public List<BlockPos> getLinkedLasers() {
-        return Collections.unmodifiableList(linkedLasers);
-    }
+    public List<UUID> getLinkedFloorGroups() { return Collections.unmodifiableList(linkedFloorGroups); }
+    public List<BlockPos> getLinkedDiscoBalls() { return Collections.unmodifiableList(linkedDiscoBalls); }
+    public List<BlockPos> getLinkedLasers() { return Collections.unmodifiableList(linkedLasers); }
+    public List<BlockPos> getLinkedPartyLights() { return Collections.unmodifiableList(linkedPartyLights); }
+    public List<BlockPos> getLinkedStrobes() { return Collections.unmodifiableList(linkedStrobes); }
+    public Map<String, Map<Long, Integer>> getPresets() { return Collections.unmodifiableMap(presets); }
 
-    public UUID getSelectedFloorGroup() {
-        return selectedFloorGroup;
-    }
+    public UUID getSelectedFloorGroup() { return selectedFloorGroup; }
+    public void setSelectedFloorGroup(UUID selectedFloorGroup) { this.selectedFloorGroup = selectedFloorGroup; setChanged(); }
 
-    public void setSelectedFloorGroup(UUID selectedFloorGroup) {
-        this.selectedFloorGroup = selectedFloorGroup;
-        setChanged();
-    }
-
-    public boolean isDiscoSpinEnabled() {
-        return discoSpinEnabled;
-    }
-
+    public boolean isDiscoSpinEnabled() { return discoSpinEnabled; }
     public void setDiscoSpinEnabled(boolean discoSpinEnabled) {
         this.discoSpinEnabled = discoSpinEnabled;
         setChanged();
         applyDiscoSpin();
     }
 
+    public GroupAnimSettings getGroupSettings(UUID groupId) {
+        return groupSettings.getOrDefault(groupId, GroupAnimSettings.defaults());
+    }
+
+    public void setGroupSettings(UUID groupId, GroupAnimSettings settings) {
+        groupSettings.put(groupId, settings);
+        setChanged();
+    }
+
     public void linkFloorGroup(UUID groupId) {
         if (groupId == null || linkedFloorGroups.contains(groupId)) return;
         linkedFloorGroups.add(groupId);
+        groupSettings.putIfAbsent(groupId, GroupAnimSettings.defaults());
         if (selectedFloorGroup == null) selectedFloorGroup = groupId;
         setChanged();
     }
 
     public void unlinkFloorGroup(UUID groupId) {
         if (linkedFloorGroups.remove(groupId)) {
+            groupSettings.remove(groupId);
             if (groupId.equals(selectedFloorGroup)) {
                 selectedFloorGroup = linkedFloorGroups.isEmpty() ? null : linkedFloorGroups.get(0);
             }
@@ -68,26 +112,18 @@ public class LightControllerBlockEntity extends BlockEntity {
         }
     }
 
-    public void linkDiscoBall(BlockPos pos) {
-        if (pos != null && !linkedDiscoBalls.contains(pos.immutable())) {
-            linkedDiscoBalls.add(pos.immutable());
+    public void linkDiscoBall(BlockPos pos) { linkPos(linkedDiscoBalls, pos); }
+    public void unlinkDiscoBall(BlockPos pos) { linkedDiscoBalls.remove(pos); setChanged(); }
+    public void linkLaser(BlockPos pos) { linkPos(linkedLasers, pos); }
+    public void unlinkLaser(BlockPos pos) { linkedLasers.remove(pos); setChanged(); }
+    public void linkPartyLight(BlockPos pos) { linkPos(linkedPartyLights, pos); }
+    public void linkStrobe(BlockPos pos) { linkPos(linkedStrobes, pos); }
+
+    private void linkPos(List<BlockPos> list, BlockPos pos) {
+        if (pos != null && !list.contains(pos.immutable())) {
+            list.add(pos.immutable());
             setChanged();
         }
-    }
-
-    public void unlinkDiscoBall(BlockPos pos) {
-        if (linkedDiscoBalls.remove(pos)) setChanged();
-    }
-
-    public void linkLaser(BlockPos pos) {
-        if (pos != null && !linkedLasers.contains(pos.immutable())) {
-            linkedLasers.add(pos.immutable());
-            setChanged();
-        }
-    }
-
-    public void unlinkLaser(BlockPos pos) {
-        if (linkedLasers.remove(pos)) setChanged();
     }
 
     public void linkTouchingFloors() {
@@ -101,6 +137,8 @@ public class LightControllerBlockEntity extends BlockEntity {
         if (level == null) return;
         linkedDiscoBalls.removeIf(pos -> !(level.getBlockEntity(pos) instanceof DiscoBallBlockEntity));
         linkedLasers.removeIf(pos -> !(level.getBlockEntity(pos) instanceof LaserEmitterBlockEntity));
+        linkedPartyLights.removeIf(pos -> !(level.getBlockEntity(pos) instanceof PartyLightBlockEntity));
+        linkedStrobes.removeIf(pos -> !(level.getBlockEntity(pos) instanceof StrobeLightBlockEntity));
         linkedFloorGroups.removeIf(id -> net.discyupgrade.core.floor.FloorGroupIndex.getMembers(id).isEmpty());
         if (selectedFloorGroup != null && !linkedFloorGroups.contains(selectedFloorGroup)) {
             selectedFloorGroup = linkedFloorGroups.isEmpty() ? null : linkedFloorGroups.get(0);
@@ -123,27 +161,61 @@ public class LightControllerBlockEntity extends BlockEntity {
         if (level == null) return;
         for (BlockPos pos : linkedDiscoBalls) {
             BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof DiscoBallBlockEntity ball) {
-                if (!discoSpinEnabled && ball.isActive()) {
-                    ball.setActive(false);
-                    level.sendBlockUpdated(pos, ball.getBlockState(), ball.getBlockState(), 3);
-                }
+            if (be instanceof DiscoBallBlockEntity ball && !discoSpinEnabled && ball.isActive()) {
+                ball.setActive(false);
+                level.sendBlockUpdated(pos, ball.getBlockState(), ball.getBlockState(), 3);
             }
         }
+    }
+
+    public void savePreset(String name, UUID groupId) {
+        if (level == null || name == null || name.isBlank()) return;
+        presets.put(name.trim(), FloorPatternPresets.snapshotGroup(level, groupId));
+        setChanged();
+    }
+
+    public void applyPreset(String name, UUID groupId) {
+        if (level == null) return;
+        Map<Long, Integer> colors = presets.get(name);
+        if (colors != null) FloorPatternPresets.applyPreset(level, groupId, colors);
+    }
+
+    public void copyGroupColors(UUID from, UUID to) {
+        if (level == null) return;
+        Map<Long, Integer> snap = FloorPatternPresets.snapshotGroup(level, from);
+        FloorPatternPresets.applyPreset(level, to, snap);
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         linkedFloorGroups.clear();
-        ListTag floors = tag.getList("FloorGroups", Tag.TAG_STRING);
-        for (Tag t : floors) linkedFloorGroups.add(UUID.fromString(t.getAsString()));
+        for (Tag t : tag.getList("FloorGroups", Tag.TAG_STRING)) {
+            linkedFloorGroups.add(UUID.fromString(t.getAsString()));
+        }
         linkedDiscoBalls.clear();
-        ListTag discos = tag.getList("DiscoBalls", Tag.TAG_LONG);
-        for (Tag t : discos) linkedDiscoBalls.add(BlockPos.of(((net.minecraft.nbt.LongTag) t).getAsLong()));
+        for (Tag t : tag.getList("DiscoBalls", Tag.TAG_LONG)) {
+            linkedDiscoBalls.add(BlockPos.of(((net.minecraft.nbt.LongTag) t).getAsLong()));
+        }
         linkedLasers.clear();
-        ListTag lasers = tag.getList("Lasers", Tag.TAG_LONG);
-        for (Tag t : lasers) linkedLasers.add(BlockPos.of(((net.minecraft.nbt.LongTag) t).getAsLong()));
+        for (Tag t : tag.getList("Lasers", Tag.TAG_LONG)) {
+            linkedLasers.add(BlockPos.of(((net.minecraft.nbt.LongTag) t).getAsLong()));
+        }
+        linkedPartyLights.clear();
+        for (Tag t : tag.getList("PartyLights", Tag.TAG_LONG)) {
+            linkedPartyLights.add(BlockPos.of(((net.minecraft.nbt.LongTag) t).getAsLong()));
+        }
+        linkedStrobes.clear();
+        for (Tag t : tag.getList("Strobes", Tag.TAG_LONG)) {
+            linkedStrobes.add(BlockPos.of(((net.minecraft.nbt.LongTag) t).getAsLong()));
+        }
+        groupSettings.clear();
+        CompoundTag anim = tag.getCompound("GroupAnim");
+        for (String key : anim.getAllKeys()) {
+            groupSettings.put(UUID.fromString(key), GroupAnimSettings.fromTag(anim.getCompound(key)));
+        }
+        presets.clear();
+        presets.putAll(FloorPatternPresets.readPresets(tag.getList("Presets", Tag.TAG_COMPOUND)));
         selectedFloorGroup = tag.hasUUID("SelectedFloor") ? tag.getUUID("SelectedFloor") : null;
         discoSpinEnabled = !tag.contains("DiscoSpin") || tag.getBoolean("DiscoSpin");
     }
@@ -154,13 +226,21 @@ public class LightControllerBlockEntity extends BlockEntity {
         ListTag floors = new ListTag();
         for (UUID id : linkedFloorGroups) floors.add(net.minecraft.nbt.StringTag.valueOf(id.toString()));
         tag.put("FloorGroups", floors);
-        ListTag discos = new ListTag();
-        for (BlockPos p : linkedDiscoBalls) discos.add(net.minecraft.nbt.LongTag.valueOf(p.asLong()));
-        tag.put("DiscoBalls", discos);
-        ListTag lasers = new ListTag();
-        for (BlockPos p : linkedLasers) lasers.add(net.minecraft.nbt.LongTag.valueOf(p.asLong()));
-        tag.put("Lasers", lasers);
+        tag.put("DiscoBalls", posList(linkedDiscoBalls));
+        tag.put("Lasers", posList(linkedLasers));
+        tag.put("PartyLights", posList(linkedPartyLights));
+        tag.put("Strobes", posList(linkedStrobes));
+        CompoundTag anim = new CompoundTag();
+        for (var e : groupSettings.entrySet()) anim.put(e.getKey().toString(), e.getValue().toTag());
+        tag.put("GroupAnim", anim);
+        tag.put("Presets", FloorPatternPresets.writePresets(presets));
         if (selectedFloorGroup != null) tag.putUUID("SelectedFloor", selectedFloorGroup);
         tag.putBoolean("DiscoSpin", discoSpinEnabled);
+    }
+
+    private static ListTag posList(List<BlockPos> positions) {
+        ListTag list = new ListTag();
+        for (BlockPos p : positions) list.add(net.minecraft.nbt.LongTag.valueOf(p.asLong()));
+        return list;
     }
 }

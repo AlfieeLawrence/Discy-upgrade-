@@ -39,6 +39,10 @@ public class DiscoBallRenderer implements BlockEntityRenderer<DiscoBallBlockEnti
 
         pose.popPose();
 
+        if (be.isActive()) {
+            renderBeams(be, partialTick, pose, buffers);
+        }
+
         if (be.isActive() && be.getLevel() != null && be.getLevel().random.nextInt(4) == 0) {
             double x = be.getBlockPos().getX() + 0.5;
             double y = be.getBlockPos().getY() + 0.2;
@@ -50,6 +54,27 @@ public class DiscoBallRenderer implements BlockEntityRenderer<DiscoBallBlockEnti
             float b = (c & 0xFF) / 255f;
             be.getLevel().addParticle(net.minecraft.core.particles.DustParticleOptions.REDSTONE,
                     x, y, z, r, g, b);
+        }
+    }
+
+    private static void renderBeams(DiscoBallBlockEntity be, float partialTick, PoseStack pose, MultiBufferSource buffers) {
+        if (be.getLevel() == null) return;
+        VertexConsumer vc = buffers.getBuffer(RenderType.lightning());
+        var mat = pose.last().pose();
+        float spin = be.getSpin() + partialTick * 4f;
+        int[] colors = {0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00, 0xFF00FF};
+        for (int i = 0; i < 4; i++) {
+            double angle = Math.toRadians(spin + i * 90);
+            float dx = (float) Math.cos(angle) * 0.7f;
+            float dz = (float) Math.sin(angle) * 0.7f;
+            int c = colors[i % colors.length];
+            float r = ((c >> 16) & 0xFF) / 255f;
+            float g = ((c >> 8) & 0xFF) / 255f;
+            float b = (c & 0xFF) / 255f;
+            float y0 = 0.15f, y1 = -1.2f;
+            float ox = 0.5f + dx * 0.1f, oz = 0.5f + dz * 0.1f;
+            vc.vertex(mat, ox, y0, oz).color(r, g, b, 0.7f).endVertex();
+            vc.vertex(mat, ox + dx, y1, oz + dz).color(r, g, b, 0.1f).endVertex();
         }
     }
 

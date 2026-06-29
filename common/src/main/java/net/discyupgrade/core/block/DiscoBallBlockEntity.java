@@ -35,8 +35,15 @@ public class DiscoBallBlockEntity extends BlockEntity {
     public void tickSpin() {
         if (active) {
             spin = (spin + 4f) % 360f;
+            if (level != null && !level.isClientSide && tick % 40 == 0) {
+                level.playSound(null, worldPosition, net.discyupgrade.core.registry.SoundEventRegistry.DISCO_BALL_SPIN.get(),
+                        net.minecraft.sounds.SoundSource.BLOCKS, 0.25f, 1.0f + (spin / 360f));
+            }
         }
+        tick++;
     }
+
+    private int tick;
 
     @Override
     public void load(CompoundTag tag) {

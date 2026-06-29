@@ -6,6 +6,7 @@ import net.discyupgrade.core.registry.BlockRegistry;
 import net.discyupgrade.core.registry.ItemRegistry;
 import net.discyupgrade.core.registry.ModMenuRegistry;
 import net.discyupgrade.core.registry.TabRegistry;
+import net.discyupgrade.core.registry.SoundEventRegistry;
 
 public class DiscyUpgrade {
     public static final String MOD_ID = "discyupgrade";
@@ -16,6 +17,7 @@ public class DiscyUpgrade {
         BlockEntityRegistry.init();
         ModMenuRegistry.init();
         TabRegistry.init();
+        SoundEventRegistry.init();
         DiscyUpgradeNetworking.init();
     }
 }

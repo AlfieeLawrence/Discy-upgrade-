@@ -250,26 +250,28 @@ public final class FloorGroupIndex {
         if (g.tiles().isEmpty()) GROUPS.remove(groupId);
     }
 
-    /** Groups touching the controller block (tile directly adjacent, or tile beside a support block). */
+    /** Groups touching the controller (direct, via link plate, or support block). */
     public static List<UUID> findTouchingGroups(Level level, BlockPos controllerPos) {
         Set<UUID> found = new LinkedHashSet<>();
+        collectNearbyGroups(level, controllerPos, found, 0);
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             BlockPos neighbor = controllerPos.relative(dir);
-            UUID id = getTileGroup(level, neighbor);
-            if (id != null) found.add(id);
-
-            for (Direction side : Direction.Plane.HORIZONTAL) {
-                if (side == dir.getOpposite()) continue;
-                BlockPos beyond = neighbor.relative(side);
-                id = getTileGroup(level, beyond);
-                if (id != null) found.add(id);
+            if (net.discyupgrade.core.block.FloorLinkPlateBlock.isLinkPlate(level.getBlockState(neighbor))) {
+                collectNearbyGroups(level, neighbor, found, 0);
             }
         }
-        for (Direction dir : Direction.Plane.HORIZONTAL) {
-            BlockPos below = controllerPos.below().relative(dir);
-            UUID id = getTileGroup(level, below);
-            if (id != null) found.add(id);
-        }
         return new ArrayList<>(found);
+    }
+
+    private static void collectNearbyGroups(Level level, BlockPos origin, Set<UUID> found, int depth) {
+        if (depth > 2) return;
+        for (Direction dir : Direction.values()) {
+            BlockPos check = origin.relative(dir);
+            UUID id = getTileGroup(level, check);
+            if (id != null) found.add(id);
+            if (net.discyupgrade.core.block.FloorLinkPlateBlock.isLinkPlate(level.getBlockState(check))) {
+                collectNearbyGroups(level, check, found, depth + 1);
+            }
+        }
     }
 }

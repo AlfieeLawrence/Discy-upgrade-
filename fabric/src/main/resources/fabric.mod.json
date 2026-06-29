@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "discyupgrade",
+  "version": "${version}",
+  "name": "Disco Lights",
+  "description": "Disco balls, lasers, programmable dance floors, and a central Light Controller.",
+  "authors": ["Alfie Lawrence"],
+  "license": "MIT",
+  "icon": "icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["net.discyupgrade.fabric.DiscyUpgradeFabric"],
+    "client": ["net.discyupgrade.fabric.DiscyUpgradeFabricClient"]
+  },
+  "depends": {
+    "fabric": "*",
+    "minecraft": ">=1.20.1",
+    "architectury": ">=9.2.14"
+  }
+}

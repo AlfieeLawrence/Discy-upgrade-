@@ -18,14 +18,16 @@ public final class TabRegistry {
                     .icon(() -> new ItemStack(ItemRegistry.DISCO_BALL.get()))
                     .displayItems((params, output) -> {
                         output.accept(ItemRegistry.DANCE_FLOOR_TILE.get());
+                        output.accept(ItemRegistry.FLOOR_LINK_PLATE.get());
                         output.accept(ItemRegistry.LIGHT_CONTROLLER.get());
                         output.accept(ItemRegistry.TUNING_WRENCH.get());
+                        output.accept(ItemRegistry.LIGHT_REMOTE.get());
                         output.accept(ItemRegistry.DISCO_BALL.get());
                         output.accept(ItemRegistry.LASER_EMITTER.get());
+                        output.accept(ItemRegistry.PARTY_LIGHT.get());
+                        output.accept(ItemRegistry.STROBE_LIGHT.get());
                     })
                     .build());
 
-    public static void init() {
-        TABS.register();
-    }
+    public static void init() { TABS.register(); }
 }
