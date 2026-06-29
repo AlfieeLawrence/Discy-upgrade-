@@ -1,0 +1,32 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "MIT"
+
+[[mods]]
+modId = "discyupgrade"
+version = "${version}"
+displayName = "Discy Upgrade"
+authors = "Alfie Lawrence"
+description = '''Disco ball, laser emitters, and linkable dance floor tiles with a controller GUI inspired by Disc Design Studio.'''
+logoFile = "icon.png"
+
+[[dependencies.discyupgrade]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.discyupgrade]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.discyupgrade]]
+modId = "architectury"
+mandatory = true
+versionRange = "[9.2.14,)"
+ordering = "NONE"
+side = "BOTH"

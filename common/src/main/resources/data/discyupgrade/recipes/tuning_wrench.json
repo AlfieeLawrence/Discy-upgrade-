@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " I ",
+    " G ",
+    " I "
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "G": { "item": "minecraft:gold_nugget" }
+  },
+  "result": {
+    "item": "discyupgrade:tuning_wrench"
+  }
+}

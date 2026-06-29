@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "discyupgrade:block/dance_floor_controller_side",
+    "down": "discyupgrade:block/dance_floor_controller_side",
+    "up": "discyupgrade:block/dance_floor_controller_top",
+    "north": "discyupgrade:block/dance_floor_controller_side",
+    "east": "discyupgrade:block/dance_floor_controller_side",
+    "south": "discyupgrade:block/dance_floor_controller_side",
+    "west": "discyupgrade:block/dance_floor_controller_side"
+  }
+}
