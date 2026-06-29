@@ -20,6 +20,12 @@ public class DiscyUpgradeForge {
         applyConfig();
         DiscyUpgrade.init();
         MinecraftForge.EVENT_BUS.addListener(this::onLevelTick);
+        MinecraftForge.EVENT_BUS.addListener(this::onPlayerTick);
+    }
+
+    private void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide) return;
+        net.discyupgrade.core.item.DiscoGogglesItem.tickPlayer(event.player);
     }
 
     private static void applyConfig() {
@@ -27,6 +33,9 @@ public class DiscyUpgradeForge {
         DiscyUpgradeConfig.remoteOpenRange = DiscyUpgradeForgeConfig.REMOTE_OPEN_RANGE.get();
         DiscyUpgradeConfig.maxLinkedFloorsPerController = DiscyUpgradeForgeConfig.MAX_LINKED_FLOORS.get();
         DiscyUpgradeConfig.maxTilesPerGroup = DiscyUpgradeForgeConfig.MAX_TILES_PER_GROUP.get();
+        DiscyUpgradeConfig.animationMaxDistance = DiscyUpgradeForgeConfig.ANIMATION_MAX_DISTANCE.get();
+        DiscyUpgradeConfig.animationTickInterval = DiscyUpgradeForgeConfig.ANIMATION_TICK_INTERVAL.get();
+        DiscyUpgradeConfig.redstoneTriggersPatterns = DiscyUpgradeForgeConfig.REDSTONE_TRIGGERS_PATTERNS.get();
     }
 
     private void onLevelTick(TickEvent.LevelTickEvent event) {

@@ -14,5 +14,9 @@
   "strobe_click": {
     "subtitle": "subtitles.discyupgrade.strobe_click",
     "sounds": ["discyupgrade:strobe_click"]
+  },
+  "disco_ambient": {
+    "subtitle": "subtitles.discyupgrade.disco_ambient",
+    "sounds": ["discyupgrade:disco_ambient"]
   }
 }

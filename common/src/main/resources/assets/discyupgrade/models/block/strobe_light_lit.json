@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "discyupgrade:block/strobe_light"
+    "all": "discyupgrade:block/strobe_light_lit"
   }
 }

@@ -25,15 +25,17 @@ public class LightControllerMenusImpl {
         var lasers = lightViews(controller, controller.getLinkedLasers(), false);
         var parties = lightViewsParty(controller);
         var strobes = lightViewsStrobe(controller);
+        var jukeboxes = LightControllerMenu.buildJukeboxViews(controller.getLevel(), controller);
         var presets = new ArrayList<>(controller.getPresets().keySet());
         UUID selected = controller.getSelectedFloorGroup();
         boolean spin = controller.isDiscoSpinEnabled();
+        boolean redstone = controller.isRedstonePowered();
 
         MenuRegistry.openExtendedMenu(player, new ExtendedMenuProvider() {
             @Override
             public void saveExtraData(FriendlyByteBuf buf) {
                 LightControllerMenu.writeOpeningData(buf, controller.getBlockPos(), floors, discos, lasers,
-                        parties, strobes, presets, selected, spin);
+                        parties, strobes, jukeboxes, presets, selected, spin, redstone, 0);
             }
 
             @Override
@@ -45,7 +47,7 @@ public class LightControllerMenusImpl {
             @Override
             public AbstractContainerMenu createMenu(int syncId, Inventory inv, Player p) {
                 return new LightControllerMenu(syncId, inv, controller.getBlockPos(), floors, discos, lasers,
-                        parties, strobes, presets, selected, spin);
+                        parties, strobes, jukeboxes, presets, selected, spin, redstone);
             }
         });
     }

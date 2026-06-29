@@ -1,0 +1,15 @@
+{
+  "parent": "discyupgrade:root",
+  "display": {
+    "icon": { "item": "discyupgrade:disco_ball" },
+    "title": { "translate": "advancements.discyupgrade.party_started.title" },
+    "description": { "translate": "advancements.discyupgrade.party_started.description" },
+    "frame": "challenge"
+  },
+  "criteria": {
+    "disco": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [{ "items": ["discyupgrade:disco_ball"] }] }
+    }
+  }
+}

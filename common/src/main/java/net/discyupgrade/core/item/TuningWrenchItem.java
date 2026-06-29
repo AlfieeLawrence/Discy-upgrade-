@@ -13,6 +13,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.discyupgrade.core.block.*;
+import net.discyupgrade.core.compat.AccessoryCompat;
 import net.discyupgrade.core.config.DiscyUpgradeConfig;
 import net.discyupgrade.core.floor.FloorGroupIndex;
 import net.discyupgrade.core.network.DiscyUpgradeNetworking;
@@ -92,9 +93,13 @@ public class TuningWrenchItem extends Item {
 
         if (sneak) {
             if (be instanceof DiscoBallBlockEntity || be instanceof LaserEmitterBlockEntity
-                    || be instanceof PartyLightBlockEntity || be instanceof StrobeLightBlockEntity) {
+                    || be instanceof PartyLightBlockEntity || be instanceof StrobeLightBlockEntity
+                    || level.getBlockState(pos).is(net.minecraft.world.level.block.Blocks.JUKEBOX)) {
                 setLightPos(stack, pos);
-                player.displayClientMessage(Component.translatable("message.discyupgrade.wrench_captured_light"), true);
+                player.displayClientMessage(Component.translatable(
+                        level.getBlockState(pos).is(net.minecraft.world.level.block.Blocks.JUKEBOX)
+                                ? "message.discyupgrade.wrench_captured_jukebox"
+                                : "message.discyupgrade.wrench_captured_light"), true);
                 return InteractionResult.CONSUME;
             }
         }
@@ -117,6 +122,9 @@ public class TuningWrenchItem extends Item {
         } else if (light instanceof StrobeLightBlockEntity) {
             controller.linkStrobe(lightPos);
             player.displayClientMessage(Component.translatable("message.discyupgrade.wrench_linked_strobe"), true);
+        } else if (level.getBlockState(lightPos).is(net.minecraft.world.level.block.Blocks.JUKEBOX)) {
+            controller.linkJukebox(lightPos);
+            player.displayClientMessage(Component.translatable("message.discyupgrade.wrench_linked_jukebox"), true);
         }
     }
 
@@ -168,16 +176,13 @@ public class TuningWrenchItem extends Item {
     }
 
     public static void setWrenchGroupFromController(ServerPlayer player, UUID groupId) {
+        AccessoryCompat.findAnywhere(player, net.discyupgrade.core.registry.ItemRegistry.TUNING_WRENCH.get())
+                .ifPresent(stack -> setGroup(stack, groupId));
         for (ItemStack stack : player.getInventory().items) {
-            if (stack.getItem() instanceof TuningWrenchItem) {
-                setGroup(stack, groupId);
-                return;
-            }
+            if (stack.getItem() instanceof TuningWrenchItem) setGroup(stack, groupId);
         }
         for (ItemStack stack : player.getInventory().offhand) {
-            if (stack.getItem() instanceof TuningWrenchItem) {
-                setGroup(stack, groupId);
-            }
+            if (stack.getItem() instanceof TuningWrenchItem) setGroup(stack, groupId);
         }
     }
 

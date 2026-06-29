@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["PPP", "PGP", "PPP"],
+  "key": {
+    "P": { "item": "minecraft:paper" },
+    "G": { "item": "discyupgrade:disco_ball" }
+  },
+  "result": { "item": "discyupgrade:disco_guide", "count": 1 }
+}

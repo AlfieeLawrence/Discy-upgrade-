@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.discyupgrade.core.screen.LightControllerMenus;
@@ -22,15 +23,16 @@ import org.jetbrains.annotations.Nullable;
 
 public class LightControllerBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
 
     public LightControllerBlock(BlockBehaviour.Properties props) {
         super(props);
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(POWERED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, POWERED);
     }
 
     @Nullable
@@ -59,6 +61,34 @@ public class LightControllerBlock extends BaseEntityBlock {
                 controller.linkTouchingFloors();
             }
         }
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, net.minecraft.world.level.block.Block block,
+                                BlockPos fromPos, boolean isMoving) {
+        if (!level.isClientSide) {
+            boolean powered = level.hasNeighborSignal(pos);
+            BlockState newState = state.setValue(POWERED, powered);
+            if (newState != state) level.setBlock(pos, newState, 2);
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof LightControllerBlockEntity controller) {
+                controller.setRedstonePowered(powered);
+            }
+        }
+    }
+
+    @Override
+    public boolean isSignalSource(BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getSignal(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos, Direction dir) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof LightControllerBlockEntity controller && controller.isRedstonePowered()) {
+            return 15;
+        }
+        return 0;
     }
 
     @Override

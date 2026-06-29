@@ -8,6 +8,8 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.discyupgrade.DiscyUpgrade;
+import net.discyupgrade.core.item.DiscoGuideItem;
+import net.discyupgrade.core.item.DiscoGogglesItem;
 import net.discyupgrade.core.item.LightRemoteItem;
 import net.discyupgrade.core.item.TuningWrenchItem;
 
@@ -27,6 +29,10 @@ public final class ItemRegistry {
             () -> new TuningWrenchItem(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> LIGHT_REMOTE = ITEMS.register("light_remote",
             () -> new LightRemoteItem(new Item.Properties().stacksTo(1)));
+    public static final RegistrySupplier<Item> DISCO_GUIDE = ITEMS.register("disco_guide",
+            () -> new DiscoGuideItem(new Item.Properties().stacksTo(16)));
+    public static final RegistrySupplier<Item> DISCO_GOGGLES = ITEMS.register("disco_goggles",
+            () -> new DiscoGogglesItem(new Item.Properties().stacksTo(1)));
 
     private static RegistrySupplier<Item> registerBlockItem(RegistrySupplier<Block> block) {
         return ITEM_REGISTRAR.register(block.getId(), () -> new BlockItem(block.get(), new Item.Properties()));

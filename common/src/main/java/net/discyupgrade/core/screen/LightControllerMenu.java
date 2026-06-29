@@ -6,6 +6,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
+import net.discyupgrade.core.audio.JukeboxSync;
 import net.discyupgrade.core.block.LightControllerBlockEntity;
 import net.discyupgrade.core.floor.FloorGroupIndex;
 import net.discyupgrade.core.floor.FloorGroups;
@@ -16,7 +17,7 @@ import java.util.*;
 
 public class LightControllerMenu extends AbstractContainerMenu {
     public record TileView(int relX, int relZ, int color) {}
-    public record GroupAnimView(FloorPattern pattern, int speed, boolean playing, boolean syncDisco) {}
+    public record GroupAnimView(FloorPattern pattern, int speed, boolean playing, boolean syncDisco, boolean syncJukebox) {}
     public record FloorGroupView(UUID id, String name, List<TileView> tiles, GroupAnimView anim) {}
     public record LightView(BlockPos pos, boolean active) {}
 
@@ -26,20 +27,25 @@ public class LightControllerMenu extends AbstractContainerMenu {
     private final List<LightView> lasers;
     private final List<LightView> partyLights;
     private final List<LightView> strobes;
+    private final List<LightView> jukeboxes;
     private final List<String> presetNames;
     private UUID selectedFloorGroup;
     private boolean discoSpinEnabled;
+    private boolean redstonePowered;
+    private int syncRevision;
 
     public LightControllerMenu(int containerId, Inventory playerInv, FriendlyByteBuf buf) {
         this(containerId, playerInv, buf.readBlockPos(), readFloorGroups(buf), readLights(buf), readLights(buf),
-                readLights(buf), readLights(buf), readPresetNames(buf),
-                buf.readBoolean() ? buf.readUUID() : null, buf.readBoolean());
+                readLights(buf), readLights(buf), readLights(buf), readPresetNames(buf),
+                buf.readBoolean() ? buf.readUUID() : null, buf.readBoolean(), buf.readBoolean());
+        syncRevision = buf.readVarInt();
     }
 
     public LightControllerMenu(int containerId, Inventory playerInv, BlockPos controllerPos,
                                List<FloorGroupView> floorGroups, List<LightView> discoBalls, List<LightView> lasers,
-                               List<LightView> partyLights, List<LightView> strobes, List<String> presetNames,
-                               UUID selectedFloorGroup, boolean discoSpinEnabled) {
+                               List<LightView> partyLights, List<LightView> strobes, List<LightView> jukeboxes,
+                               List<String> presetNames, UUID selectedFloorGroup, boolean discoSpinEnabled,
+                               boolean redstonePowered) {
         super(ModMenuRegistry.LIGHT_CONTROLLER.get(), containerId);
         this.controllerPos = controllerPos;
         this.floorGroups = floorGroups == null ? new ArrayList<>() : new ArrayList<>(floorGroups);
@@ -47,24 +53,53 @@ public class LightControllerMenu extends AbstractContainerMenu {
         this.lasers = lasers == null ? new ArrayList<>() : new ArrayList<>(lasers);
         this.partyLights = partyLights == null ? new ArrayList<>() : new ArrayList<>(partyLights);
         this.strobes = strobes == null ? new ArrayList<>() : new ArrayList<>(strobes);
+        this.jukeboxes = jukeboxes == null ? new ArrayList<>() : new ArrayList<>(jukeboxes);
         this.presetNames = presetNames == null ? new ArrayList<>() : new ArrayList<>(presetNames);
         this.selectedFloorGroup = selectedFloorGroup;
         this.discoSpinEnabled = discoSpinEnabled;
+        this.redstonePowered = redstonePowered;
+        this.syncRevision = 0;
     }
 
     public static void writeOpeningData(FriendlyByteBuf buf, BlockPos pos, List<FloorGroupView> floors,
                                         List<LightView> discos, List<LightView> lasers, List<LightView> parties,
-                                        List<LightView> strobes, List<String> presets, UUID selected, boolean discoSpin) {
+                                        List<LightView> strobes, List<LightView> jukeboxes, List<String> presets,
+                                        UUID selected, boolean discoSpin, boolean redstone, int revision) {
         buf.writeBlockPos(pos);
         writeFloorGroups(buf, floors);
         writeLights(buf, discos);
         writeLights(buf, lasers);
         writeLights(buf, parties);
         writeLights(buf, strobes);
+        writeLights(buf, jukeboxes);
         buf.writeVarInt(presets.size());
         for (String p : presets) buf.writeUtf(p);
         if (selected != null) { buf.writeBoolean(true); buf.writeUUID(selected); } else buf.writeBoolean(false);
         buf.writeBoolean(discoSpin);
+        buf.writeBoolean(redstone);
+        buf.writeVarInt(revision);
+    }
+
+    public void applySync(FriendlyByteBuf buf) {
+        buf.readBlockPos();
+        floorGroups.clear();
+        floorGroups.addAll(readFloorGroups(buf));
+        discoBalls.clear();
+        discoBalls.addAll(readLights(buf));
+        lasers.clear();
+        lasers.addAll(readLights(buf));
+        partyLights.clear();
+        partyLights.addAll(readLights(buf));
+        strobes.clear();
+        strobes.addAll(readLights(buf));
+        jukeboxes.clear();
+        jukeboxes.addAll(readLights(buf));
+        presetNames.clear();
+        presetNames.addAll(readPresetNames(buf));
+        selectedFloorGroup = buf.readBoolean() ? buf.readUUID() : null;
+        discoSpinEnabled = buf.readBoolean();
+        redstonePowered = buf.readBoolean();
+        syncRevision = buf.readVarInt();
     }
 
     private static List<FloorGroupView> readFloorGroups(FriendlyByteBuf buf) {
@@ -75,7 +110,7 @@ public class LightControllerMenu extends AbstractContainerMenu {
             String name = buf.readUtf();
             List<TileView> tiles = readTiles(buf);
             GroupAnimView anim = new GroupAnimView(FloorPattern.fromId(buf.readVarInt()), buf.readVarInt(),
-                    buf.readBoolean(), buf.readBoolean());
+                    buf.readBoolean(), buf.readBoolean(), buf.readBoolean());
             list.add(new FloorGroupView(id, name, tiles, anim));
         }
         return list;
@@ -91,6 +126,7 @@ public class LightControllerMenu extends AbstractContainerMenu {
             buf.writeVarInt(g.anim().speed());
             buf.writeBoolean(g.anim().playing());
             buf.writeBoolean(g.anim().syncDisco());
+            buf.writeBoolean(g.anim().syncJukebox());
         }
     }
 
@@ -134,9 +170,17 @@ public class LightControllerMenu extends AbstractContainerMenu {
             }
             var anim = controller.getGroupSettings(id);
             views.add(new FloorGroupView(id, FloorGroupIndex.getGroupName(id), tiles,
-                    new GroupAnimView(anim.pattern(), anim.speed(), anim.playing(), anim.syncDisco())));
+                    new GroupAnimView(anim.pattern(), anim.speed(), anim.playing(), anim.syncDisco(), anim.syncJukebox())));
         }
         return views;
+    }
+
+    public static List<LightView> buildJukeboxViews(net.minecraft.world.level.Level level, LightControllerBlockEntity controller) {
+        List<LightView> list = new ArrayList<>();
+        for (BlockPos pos : controller.getLinkedJukeboxes()) {
+            list.add(new LightView(pos, JukeboxSync.isPlaying(level, pos)));
+        }
+        return list;
     }
 
     public BlockPos getControllerPos() { return controllerPos; }
@@ -145,9 +189,12 @@ public class LightControllerMenu extends AbstractContainerMenu {
     public List<LightView> getLasers() { return lasers; }
     public List<LightView> getPartyLights() { return partyLights; }
     public List<LightView> getStrobes() { return strobes; }
+    public List<LightView> getJukeboxes() { return jukeboxes; }
     public List<String> getPresetNames() { return presetNames; }
     public UUID getSelectedFloorGroup() { return selectedFloorGroup; }
     public boolean isDiscoSpinEnabled() { return discoSpinEnabled; }
+    public boolean isRedstonePowered() { return redstonePowered; }
+    public int getSyncRevision() { return syncRevision; }
 
     public void updateTileColor(UUID groupId, int relX, int relZ, int color) {
         for (int i = 0; i < floorGroups.size(); i++) {

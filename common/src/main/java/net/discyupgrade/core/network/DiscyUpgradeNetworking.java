@@ -18,9 +18,13 @@ import net.discyupgrade.core.screen.LightControllerMenu;
 import net.discyupgrade.core.screen.LightControllerMenus;
 import net.discyupgrade.core.util.ModIdentifier;
 
+import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class DiscyUpgradeNetworking {
+    private static final AtomicInteger SYNC_SEQ = new AtomicInteger();
+
     public static final ResourceLocation SET_TILE_COLOR = ModIdentifier.of("set_tile_color");
     public static final ResourceLocation APPLY_ALL_COLOR = ModIdentifier.of("apply_all_color");
     public static final ResourceLocation SELECT_FLOOR_GROUP = ModIdentifier.of("select_floor_group");
@@ -37,34 +41,92 @@ public final class DiscyUpgradeNetworking {
     public static final ResourceLocation SET_PATTERN_SPEED = ModIdentifier.of("set_pattern_speed");
     public static final ResourceLocation TOGGLE_PATTERN = ModIdentifier.of("toggle_pattern");
     public static final ResourceLocation TOGGLE_SYNC_DISCO = ModIdentifier.of("toggle_sync_disco");
+    public static final ResourceLocation TOGGLE_SYNC_JUKEBOX = ModIdentifier.of("toggle_sync_jukebox");
     public static final ResourceLocation SAVE_PRESET = ModIdentifier.of("save_preset");
     public static final ResourceLocation APPLY_PRESET = ModIdentifier.of("apply_preset");
     public static final ResourceLocation COPY_GROUP = ModIdentifier.of("copy_group");
     public static final ResourceLocation REFRESH_CONTROLLER = ModIdentifier.of("refresh_controller");
+    public static final ResourceLocation SYNC_MENU = ModIdentifier.of("sync_menu");
 
     private DiscyUpgradeNetworking() {}
 
     public static void init() {
-        register(SET_TILE_COLOR, (p, b) -> handleSetTileColor(p, b.readBlockPos(), b.readUUID(), b.readVarInt(), b.readVarInt(), b.readVarInt()));
-        register(APPLY_ALL_COLOR, (p, b) -> handleApplyAllColor(p, b.readBlockPos(), b.readUUID(), b.readVarInt()));
-        register(SELECT_FLOOR_GROUP, (p, b) -> { var c = getController(p, b.readBlockPos()); if (c != null) c.setSelectedFloorGroup(b.readUUID()); });
-        register(RENAME_FLOOR_GROUP, (p, b) -> FloorGroupIndex.setGroupName(b.readUUID(), b.readUtf(32)));
-        register(UNLINK_FLOOR_GROUP, (p, b) -> { var c = getController(p, b.readBlockPos()); if (c != null) c.unlinkFloorGroup(b.readUUID()); });
-        register(SET_WRENCH_GROUP, (p, b) -> TuningWrenchItem.setWrenchGroupFromController(p, b.readUUID()));
-        register(TOGGLE_DISCO_SPIN, (p, b) -> { var c = getController(p, b.readBlockPos()); if (c != null) c.setDiscoSpinEnabled(b.readBoolean()); });
-        register(TOGGLE_ALL_DISCOS, (p, b) -> { var c = getController(p, b.readBlockPos()); if (c != null) c.toggleAllDiscos(); });
-        register(TOGGLE_DISCO, (p, b) -> toggleDisco(p, b.readBlockPos(), b.readBlockPos()));
-        register(TOGGLE_LASER, (p, b) -> toggleLaser(p, b.readBlockPos(), b.readBlockPos()));
-        register(TOGGLE_PARTY, (p, b) -> toggleParty(p, b.readBlockPos(), b.readBlockPos()));
-        register(TOGGLE_STROBE, (p, b) -> toggleStrobe(p, b.readBlockPos(), b.readBlockPos()));
-        register(SET_PATTERN, (p, b) -> setPattern(p, b.readBlockPos(), b.readUUID(), FloorPattern.fromId(b.readVarInt())));
-        register(SET_PATTERN_SPEED, (p, b) -> setSpeed(p, b.readBlockPos(), b.readUUID(), b.readVarInt()));
-        register(TOGGLE_PATTERN, (p, b) -> togglePlaying(p, b.readBlockPos(), b.readUUID(), b.readBoolean()));
-        register(TOGGLE_SYNC_DISCO, (p, b) -> toggleSyncDisco(p, b.readBlockPos(), b.readUUID(), b.readBoolean()));
-        register(SAVE_PRESET, (p, b) -> { var c = getController(p, b.readBlockPos()); if (c != null) c.savePreset(b.readUtf(24), b.readUUID()); });
-        register(APPLY_PRESET, (p, b) -> { var c = getController(p, b.readBlockPos()); if (c != null) c.applyPreset(b.readUtf(24), b.readUUID()); });
-        register(COPY_GROUP, (p, b) -> { var c = getController(p, b.readBlockPos()); if (c != null) c.copyGroupColors(b.readUUID(), b.readUUID()); });
-        register(REFRESH_CONTROLLER, (p, b) -> {
+        registerC2S(SET_TILE_COLOR, (p, b) -> handleSetTileColor(p, b.readBlockPos(), b.readUUID(), b.readVarInt(), b.readVarInt(), b.readVarInt()));
+        registerC2S(APPLY_ALL_COLOR, (p, b) -> handleApplyAllColor(p, b.readBlockPos(), b.readUUID(), b.readVarInt()));
+        registerC2S(SELECT_FLOOR_GROUP, (p, b) -> {
+            var c = getController(p, b.readBlockPos());
+            if (c != null) { c.setSelectedFloorGroup(b.readUUID()); syncMenu(p, c); }
+        });
+        registerC2S(RENAME_FLOOR_GROUP, (p, b) -> {
+            UUID groupId = b.readUUID();
+            FloorGroupIndex.setGroupName(groupId, b.readUtf(32));
+            if (p.containerMenu instanceof LightControllerMenu menu) {
+                BlockEntity be = p.level().getBlockEntity(menu.getControllerPos());
+                if (be instanceof LightControllerBlockEntity controller) syncMenu(p, controller);
+            }
+        });
+        registerC2S(UNLINK_FLOOR_GROUP, (p, b) -> {
+            var c = getController(p, b.readBlockPos());
+            if (c != null) { c.unlinkFloorGroup(b.readUUID()); syncMenu(p, c); }
+        });
+        registerC2S(SET_WRENCH_GROUP, (p, b) -> TuningWrenchItem.setWrenchGroupFromController(p, b.readUUID()));
+        registerC2S(TOGGLE_DISCO_SPIN, (p, b) -> {
+            var c = getController(p, b.readBlockPos());
+            if (c != null) { c.setDiscoSpinEnabled(b.readBoolean()); syncMenu(p, c); }
+        });
+        registerC2S(TOGGLE_ALL_DISCOS, (p, b) -> {
+            var c = getController(p, b.readBlockPos());
+            if (c != null) { c.toggleAllDiscos(); syncMenu(p, c); }
+        });
+        registerC2S(TOGGLE_DISCO, (p, b) -> {
+            BlockPos cPos = b.readBlockPos(); BlockPos target = b.readBlockPos();
+            toggleDisco(p, cPos, target); syncMenu(p, getController(p, cPos));
+        });
+        registerC2S(TOGGLE_LASER, (p, b) -> {
+            BlockPos cPos = b.readBlockPos(); BlockPos target = b.readBlockPos();
+            toggleLaser(p, cPos, target); syncMenu(p, getController(p, cPos));
+        });
+        registerC2S(TOGGLE_PARTY, (p, b) -> {
+            BlockPos cPos = b.readBlockPos(); BlockPos target = b.readBlockPos();
+            toggleParty(p, cPos, target); syncMenu(p, getController(p, cPos));
+        });
+        registerC2S(TOGGLE_STROBE, (p, b) -> {
+            BlockPos cPos = b.readBlockPos(); BlockPos target = b.readBlockPos();
+            toggleStrobe(p, cPos, target); syncMenu(p, getController(p, cPos));
+        });
+        registerC2S(SET_PATTERN, (p, b) -> {
+            BlockPos cPos = b.readBlockPos(); UUID g = b.readUUID();
+            setPattern(p, cPos, g, FloorPattern.fromId(b.readVarInt())); syncMenu(p, getController(p, cPos));
+        });
+        registerC2S(SET_PATTERN_SPEED, (p, b) -> {
+            BlockPos cPos = b.readBlockPos(); UUID g = b.readUUID();
+            setSpeed(p, cPos, g, b.readVarInt()); syncMenu(p, getController(p, cPos));
+        });
+        registerC2S(TOGGLE_PATTERN, (p, b) -> {
+            BlockPos cPos = b.readBlockPos(); UUID g = b.readUUID();
+            togglePlaying(p, cPos, g, b.readBoolean()); syncMenu(p, getController(p, cPos));
+        });
+        registerC2S(TOGGLE_SYNC_DISCO, (p, b) -> {
+            BlockPos cPos = b.readBlockPos(); UUID g = b.readUUID();
+            toggleSyncDisco(p, cPos, g, b.readBoolean()); syncMenu(p, getController(p, cPos));
+        });
+        registerC2S(TOGGLE_SYNC_JUKEBOX, (p, b) -> {
+            BlockPos cPos = b.readBlockPos(); UUID g = b.readUUID();
+            toggleSyncJukebox(p, cPos, g, b.readBoolean()); syncMenu(p, getController(p, cPos));
+        });
+        registerC2S(SAVE_PRESET, (p, b) -> {
+            var c = getController(p, b.readBlockPos());
+            if (c != null) { c.savePreset(b.readUtf(24), b.readUUID()); syncMenu(p, c); }
+        });
+        registerC2S(APPLY_PRESET, (p, b) -> {
+            var c = getController(p, b.readBlockPos());
+            if (c != null) { c.applyPreset(b.readUtf(24), b.readUUID()); syncMenu(p, c); }
+        });
+        registerC2S(COPY_GROUP, (p, b) -> {
+            var c = getController(p, b.readBlockPos());
+            if (c != null) { c.copyGroupColors(b.readUUID(), b.readUUID()); syncMenu(p, c); }
+        });
+        registerC2S(REFRESH_CONTROLLER, (p, b) -> {
             var c = getController(p, b.readBlockPos());
             if (c != null) {
                 c.linkTouchingFloors();
@@ -72,13 +134,23 @@ public final class DiscyUpgradeNetworking {
                 for (UUID id : c.getLinkedFloorGroups()) {
                     if (p.level() instanceof ServerLevel sl) FloorGroupIndex.rebuildFromLevel(sl, id);
                 }
+                syncMenu(p, c);
             }
+        });
+
+        NetworkManager.registerReceiver(NetworkManager.Side.S2C, SYNC_MENU, (buf, ctx) -> {
+            ctx.queue(() -> {
+                Player player = ctx.getPlayer();
+                if (player.containerMenu instanceof LightControllerMenu menu) {
+                    menu.applySync(buf);
+                }
+            });
         });
     }
 
     private interface PacketHandler { void handle(ServerPlayer player, FriendlyByteBuf buf); }
 
-    private static void register(ResourceLocation id, PacketHandler handler) {
+    private static void registerC2S(ResourceLocation id, PacketHandler handler) {
         NetworkManager.registerReceiver(NetworkManager.Side.C2S, id, (buf, ctx) -> {
             Player player = ctx.getPlayer();
             if (player instanceof ServerPlayer sp) ctx.queue(() -> handler.handle(sp, buf));
@@ -88,13 +160,40 @@ public final class DiscyUpgradeNetworking {
     public static void syncOpenMenu(Player player) {
         if (!(player instanceof ServerPlayer sp)) return;
         if (sp.containerMenu instanceof LightControllerMenu menu) {
-            BlockPos pos = menu.getControllerPos();
-            BlockEntity be = sp.level().getBlockEntity(pos);
-            if (be instanceof LightControllerBlockEntity controller) {
-                sp.closeContainer();
-                LightControllerMenus.open(sp, controller);
-            }
+            BlockEntity be = sp.level().getBlockEntity(menu.getControllerPos());
+            if (be instanceof LightControllerBlockEntity controller) syncMenu(sp, controller);
         }
+    }
+
+    public static void syncMenu(ServerPlayer player, LightControllerBlockEntity controller) {
+        if (controller == null || player == null) return;
+        if (!(player.containerMenu instanceof LightControllerMenu menu)) return;
+        if (!menu.getControllerPos().equals(controller.getBlockPos())) return;
+
+        controller.pruneBrokenLinks();
+        var floors = LightControllerMenu.buildFloorViews(controller.getLevel(), controller);
+        var discos = lightViews(controller, controller.getLinkedDiscoBalls(), true);
+        var lasers = lightViews(controller, controller.getLinkedLasers(), false);
+        var parties = lightViewsParty(controller);
+        var strobes = lightViewsStrobe(controller);
+        var jukeboxes = LightControllerMenu.buildJukeboxViews(controller.getLevel(), controller);
+        var presets = new ArrayList<>(controller.getPresets().keySet());
+        NetworkManager.sendToPlayer(player, SYNC_MENU, buildSyncBuf(controller, floors, discos, lasers, parties, strobes, jukeboxes, presets));
+    }
+
+    private static FriendlyByteBuf buildSyncBuf(LightControllerBlockEntity controller,
+                                                 java.util.List<LightControllerMenu.FloorGroupView> floors,
+                                                 java.util.List<LightControllerMenu.LightView> discos,
+                                                 java.util.List<LightControllerMenu.LightView> lasers,
+                                                 java.util.List<LightControllerMenu.LightView> parties,
+                                                 java.util.List<LightControllerMenu.LightView> strobes,
+                                                 java.util.List<LightControllerMenu.LightView> jukeboxes,
+                                                 java.util.List<String> presets) {
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        LightControllerMenu.writeOpeningData(buf, controller.getBlockPos(), floors, discos, lasers, parties, strobes,
+                jukeboxes, presets, controller.getSelectedFloorGroup(), controller.isDiscoSpinEnabled(),
+                controller.isRedstonePowered(), SYNC_SEQ.incrementAndGet());
+        return buf;
     }
 
     private static LightControllerBlockEntity getController(ServerPlayer player, BlockPos pos) {
@@ -105,6 +204,37 @@ public final class DiscyUpgradeNetworking {
 
     private static boolean hasGroup(LightControllerBlockEntity c, UUID groupId) {
         return c.getLinkedFloorGroups().contains(groupId);
+    }
+
+    private static java.util.List<LightControllerMenu.LightView> lightViews(LightControllerBlockEntity controller,
+                                                                              java.util.List<BlockPos> positions, boolean disco) {
+        java.util.List<LightControllerMenu.LightView> list = new ArrayList<>();
+        for (var pos : positions) {
+            BlockEntity be = controller.getLevel().getBlockEntity(pos);
+            boolean active = disco
+                    ? be instanceof DiscoBallBlockEntity ball && ball.isActive()
+                    : be instanceof LaserEmitterBlockEntity laser && laser.isPowered();
+            list.add(new LightControllerMenu.LightView(pos, active));
+        }
+        return list;
+    }
+
+    private static java.util.List<LightControllerMenu.LightView> lightViewsParty(LightControllerBlockEntity controller) {
+        java.util.List<LightControllerMenu.LightView> list = new ArrayList<>();
+        for (var pos : controller.getLinkedPartyLights()) {
+            BlockEntity be = controller.getLevel().getBlockEntity(pos);
+            list.add(new LightControllerMenu.LightView(pos, be instanceof PartyLightBlockEntity p && p.isPowered()));
+        }
+        return list;
+    }
+
+    private static java.util.List<LightControllerMenu.LightView> lightViewsStrobe(LightControllerBlockEntity controller) {
+        java.util.List<LightControllerMenu.LightView> list = new ArrayList<>();
+        for (var pos : controller.getLinkedStrobes()) {
+            BlockEntity be = controller.getLevel().getBlockEntity(pos);
+            list.add(new LightControllerMenu.LightView(pos, be instanceof StrobeLightBlockEntity s && s.isPowered()));
+        }
+        return list;
     }
 
     private static void handleSetTileColor(ServerPlayer player, BlockPos controllerPos, UUID groupId, int relX, int relZ, int color) {
@@ -138,6 +268,7 @@ public final class DiscyUpgradeNetworking {
                 for (var tile : t.tiles()) menu.updateTileColor(groupId, tile.relX(), tile.relZ(), color);
             }
         }
+        syncMenu(player, c);
     }
 
     private static void toggleDisco(ServerPlayer player, BlockPos controllerPos, BlockPos discoPos) {
@@ -184,31 +315,37 @@ public final class DiscyUpgradeNetworking {
         var c = getController(player, controllerPos);
         if (c == null || !hasGroup(c, groupId)) return;
         var s = c.getGroupSettings(groupId);
-        c.setGroupSettings(groupId, new LightControllerBlockEntity.GroupAnimSettings(pattern, s.speed(), s.playing(), s.syncDisco()));
+        c.setGroupSettings(groupId, new LightControllerBlockEntity.GroupAnimSettings(pattern, s.speed(), s.playing(), s.syncDisco(), s.syncJukebox()));
     }
 
     private static void setSpeed(ServerPlayer player, BlockPos controllerPos, UUID groupId, int speed) {
         var c = getController(player, controllerPos);
         if (c == null || !hasGroup(c, groupId)) return;
         var s = c.getGroupSettings(groupId);
-        c.setGroupSettings(groupId, new LightControllerBlockEntity.GroupAnimSettings(s.pattern(), Math.max(1, Math.min(10, speed)), s.playing(), s.syncDisco()));
+        c.setGroupSettings(groupId, new LightControllerBlockEntity.GroupAnimSettings(s.pattern(), Math.max(1, Math.min(10, speed)), s.playing(), s.syncDisco(), s.syncJukebox()));
     }
 
     private static void togglePlaying(ServerPlayer player, BlockPos controllerPos, UUID groupId, boolean playing) {
         var c = getController(player, controllerPos);
         if (c == null || !hasGroup(c, groupId)) return;
         var s = c.getGroupSettings(groupId);
-        c.setGroupSettings(groupId, new LightControllerBlockEntity.GroupAnimSettings(s.pattern(), s.speed(), playing, s.syncDisco()));
+        c.setGroupSettings(groupId, new LightControllerBlockEntity.GroupAnimSettings(s.pattern(), s.speed(), playing, s.syncDisco(), s.syncJukebox()));
     }
 
     private static void toggleSyncDisco(ServerPlayer player, BlockPos controllerPos, UUID groupId, boolean sync) {
         var c = getController(player, controllerPos);
         if (c == null || !hasGroup(c, groupId)) return;
         var s = c.getGroupSettings(groupId);
-        c.setGroupSettings(groupId, new LightControllerBlockEntity.GroupAnimSettings(s.pattern(), s.speed(), s.playing(), sync));
+        c.setGroupSettings(groupId, new LightControllerBlockEntity.GroupAnimSettings(s.pattern(), s.speed(), s.playing(), sync, s.syncJukebox()));
     }
 
-    // --- send helpers ---
+    private static void toggleSyncJukebox(ServerPlayer player, BlockPos controllerPos, UUID groupId, boolean sync) {
+        var c = getController(player, controllerPos);
+        if (c == null || !hasGroup(c, groupId)) return;
+        var s = c.getGroupSettings(groupId);
+        c.setGroupSettings(groupId, new LightControllerBlockEntity.GroupAnimSettings(s.pattern(), s.speed(), s.playing(), s.syncDisco(), sync));
+    }
+
     public static void sendSetTileColor(BlockPos c, UUID g, int x, int z, int color) {
         var b = new FriendlyByteBuf(Unpooled.buffer());
         b.writeBlockPos(c); b.writeUUID(g); b.writeVarInt(x); b.writeVarInt(z); b.writeVarInt(color);
@@ -235,18 +372,14 @@ public final class DiscyUpgradeNetworking {
         NetworkManager.sendToServer(UNLINK_FLOOR_GROUP, b);
     }
 
-    public static void sendSetWrenchGroup(UUID g) {
-        NetworkManager.sendToServer(SET_WRENCH_GROUP, writeUuid(g));
-    }
+    public static void sendSetWrenchGroup(UUID g) { NetworkManager.sendToServer(SET_WRENCH_GROUP, writeUuid(g)); }
 
     public static void sendToggleDiscoSpin(BlockPos c, boolean on) {
         var b = new FriendlyByteBuf(Unpooled.buffer()); b.writeBlockPos(c); b.writeBoolean(on);
         NetworkManager.sendToServer(TOGGLE_DISCO_SPIN, b);
     }
 
-    public static void sendToggleAllDiscos(BlockPos c) {
-        NetworkManager.sendToServer(TOGGLE_ALL_DISCOS, writePos(c));
-    }
+    public static void sendToggleAllDiscos(BlockPos c) { NetworkManager.sendToServer(TOGGLE_ALL_DISCOS, writePos(c)); }
 
     public static void sendToggleDisco(BlockPos c, BlockPos disco) {
         var b = new FriendlyByteBuf(Unpooled.buffer()); b.writeBlockPos(c); b.writeBlockPos(disco);
@@ -288,6 +421,11 @@ public final class DiscyUpgradeNetworking {
         NetworkManager.sendToServer(TOGGLE_SYNC_DISCO, b);
     }
 
+    public static void sendToggleSyncJukebox(BlockPos c, UUID g, boolean sync) {
+        var b = new FriendlyByteBuf(Unpooled.buffer()); b.writeBlockPos(c); b.writeUUID(g); b.writeBoolean(sync);
+        NetworkManager.sendToServer(TOGGLE_SYNC_JUKEBOX, b);
+    }
+
     public static void sendSavePreset(BlockPos c, String name, UUID g) {
         var b = new FriendlyByteBuf(Unpooled.buffer()); b.writeBlockPos(c); b.writeUtf(name, 24); b.writeUUID(g);
         NetworkManager.sendToServer(SAVE_PRESET, b);
@@ -303,9 +441,7 @@ public final class DiscyUpgradeNetworking {
         NetworkManager.sendToServer(COPY_GROUP, b);
     }
 
-    public static void sendRefresh(BlockPos c) {
-        NetworkManager.sendToServer(REFRESH_CONTROLLER, writePos(c));
-    }
+    public static void sendRefresh(BlockPos c) { NetworkManager.sendToServer(REFRESH_CONTROLLER, writePos(c)); }
 
     private static FriendlyByteBuf writePos(BlockPos pos) {
         var b = new FriendlyByteBuf(Unpooled.buffer()); b.writeBlockPos(pos); return b;

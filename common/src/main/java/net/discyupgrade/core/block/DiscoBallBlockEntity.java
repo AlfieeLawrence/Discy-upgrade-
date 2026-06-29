@@ -39,6 +39,10 @@ public class DiscoBallBlockEntity extends BlockEntity {
                 level.playSound(null, worldPosition, net.discyupgrade.core.registry.SoundEventRegistry.DISCO_BALL_SPIN.get(),
                         net.minecraft.sounds.SoundSource.BLOCKS, 0.25f, 1.0f + (spin / 360f));
             }
+            if (level != null && !level.isClientSide && tick % 80 == 0) {
+                level.playSound(null, worldPosition, net.discyupgrade.core.registry.SoundEventRegistry.DISCO_AMBIENT.get(),
+                        net.minecraft.sounds.SoundSource.AMBIENT, 0.2f, 1.0f);
+            }
         }
         tick++;
     }

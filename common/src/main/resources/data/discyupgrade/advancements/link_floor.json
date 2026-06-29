@@ -1,0 +1,15 @@
+{
+  "parent": "discyupgrade:root",
+  "display": {
+    "icon": { "item": "discyupgrade:light_controller" },
+    "title": { "translate": "advancements.discyupgrade.link_floor.title" },
+    "description": { "translate": "advancements.discyupgrade.link_floor.description" },
+    "frame": "task"
+  },
+  "criteria": {
+    "controller": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [{ "items": ["discyupgrade:light_controller"] }] }
+    }
+  }
+}

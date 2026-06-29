@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["GLG", "L L", "   "],
+  "key": {
+    "G": { "item": "minecraft:glass_pane" },
+    "L": { "item": "minecraft:glowstone_dust" }
+  },
+  "result": { "item": "discyupgrade:disco_goggles", "count": 1 }
+}

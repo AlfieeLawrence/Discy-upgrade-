@@ -1,0 +1,15 @@
+{
+  "parent": "discyupgrade:link_floor",
+  "display": {
+    "icon": { "item": "discyupgrade:tuning_wrench" },
+    "title": { "translate": "advancements.discyupgrade.wireless_link.title" },
+    "description": { "translate": "advancements.discyupgrade.wireless_link.description" },
+    "frame": "task"
+  },
+  "criteria": {
+    "wrench": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [{ "items": ["discyupgrade:tuning_wrench"] }] }
+    }
+  }
+}

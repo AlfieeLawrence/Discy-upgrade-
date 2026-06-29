@@ -1,0 +1,15 @@
+{
+  "parent": "discyupgrade:link_floor",
+  "display": {
+    "icon": { "item": "discyupgrade:dance_floor_tile" },
+    "title": { "translate": "advancements.discyupgrade.rainbow_chase.title" },
+    "description": { "translate": "advancements.discyupgrade.rainbow_chase.description" },
+    "frame": "goal"
+  },
+  "criteria": {
+    "party": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [{ "items": ["discyupgrade:party_light"] }] }
+    }
+  }
+}

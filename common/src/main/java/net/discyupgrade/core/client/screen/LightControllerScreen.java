@@ -29,10 +29,25 @@ public class LightControllerScreen extends AbstractContainerScreen<LightControll
     private int patternSpeed = 5;
     private final Map<Long, Integer> localColors = new HashMap<>();
 
+    private int lastSyncRevision = -1;
+
     public LightControllerScreen(LightControllerMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         imageWidth = 340;
         imageHeight = 236;
+    }
+
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        if (menu.getSyncRevision() != lastSyncRevision) {
+            lastSyncRevision = menu.getSyncRevision();
+            activeGroupId = menu.getSelectedFloorGroup();
+            syncAnimFromGroup();
+            reloadColors();
+            layoutGrid();
+            syncGroupNameField();
+        }
     }
 
     @Override
@@ -104,6 +119,9 @@ public class LightControllerScreen extends AbstractContainerScreen<LightControll
         addRenderableWidget(Button.builder(Component.translatable("gui.discyupgrade.sync_disco"), b -> {
             if (activeGroupId != null) DiscyUpgradeNetworking.sendToggleSyncDisco(menu.getControllerPos(), activeGroupId, true);
         }).bounds(leftPos + 274, by - 22, 58, 18).build());
+        addRenderableWidget(Button.builder(Component.literal("♫"), b -> {
+            if (activeGroupId != null) DiscyUpgradeNetworking.sendToggleSyncJukebox(menu.getControllerPos(), activeGroupId, true);
+        }).bounds(leftPos + 8, by - 40, 20, 18).build());
 
         addRenderableWidget(Button.builder(Component.translatable("gui.discyupgrade.save_preset"), b -> savePreset())
                 .bounds(leftPos + 198, topPos + imageHeight - 22, 62, 18).build());
@@ -237,6 +255,9 @@ public class LightControllerScreen extends AbstractContainerScreen<LightControll
         }
         g.drawString(font, Component.translatable("gui.discyupgrade.pattern_name",
                 FloorPattern.fromId(patternIndex).name()), leftPos + 8, topPos + imageHeight - 78, 0xFFAAAAAA, false);
+        if (menu.isRedstonePowered()) {
+            g.drawString(font, Component.translatable("gui.discyupgrade.redstone_on"), leftPos + 8, topPos + imageHeight - 66, 0xFFFF6666, false);
+        }
         for (var tile : view.get().tiles()) {
             int x = gridOriginX + tile.relX() * tileSize, y = gridOriginY + tile.relZ() * tileSize;
             int color = localColors.getOrDefault(pack(tile.relX(), tile.relZ()), tile.color());
@@ -252,7 +273,8 @@ public class LightControllerScreen extends AbstractContainerScreen<LightControll
         y = drawLightSection(g, y, "gui.discyupgrade.disco_balls", menu.getDiscoBalls(), true);
         y = drawLightSection(g, y, "gui.discyupgrade.lasers", menu.getLasers(), false);
         y = drawLightSection(g, y, "gui.discyupgrade.party_lights", menu.getPartyLights(), false);
-        drawLightSection(g, y, "gui.discyupgrade.strobe_lights", menu.getStrobes(), false);
+        y = drawLightSection(g, y, "gui.discyupgrade.strobe_lights", menu.getStrobes(), false);
+        drawLightSection(g, y, "gui.discyupgrade.jukeboxes", menu.getJukeboxes(), false);
         g.drawString(font, Component.translatable("gui.discyupgrade.spin_state", menu.isDiscoSpinEnabled() ? "ON" : "OFF"),
                 leftPos + 10, topPos + imageHeight - 70, 0xFFAAAAAA, false);
         addRenderableWidget(Button.builder(Component.translatable("gui.discyupgrade.disco_spin"),

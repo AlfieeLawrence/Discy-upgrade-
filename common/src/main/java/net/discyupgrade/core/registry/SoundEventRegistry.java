@@ -17,6 +17,7 @@ public final class SoundEventRegistry {
     public static final RegistrySupplier<SoundEvent> FLOOR_TICK = register("floor_tick");
     public static final RegistrySupplier<SoundEvent> LASER_HUM = register("laser_hum");
     public static final RegistrySupplier<SoundEvent> STROBE_CLICK = register("strobe_click");
+    public static final RegistrySupplier<SoundEvent> DISCO_AMBIENT = register("disco_ambient");
 
     private static RegistrySupplier<SoundEvent> register(String path) {
         return SOUND_REGISTRAR.register(new ModIdentifier(path),

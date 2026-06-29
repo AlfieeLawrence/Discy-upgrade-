@@ -1,0 +1,16 @@
+{
+  "display": {
+    "icon": { "item": "discyupgrade:dance_floor_tile" },
+    "title": { "translate": "advancements.discyupgrade.root.title" },
+    "description": { "translate": "advancements.discyupgrade.root.description" },
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "dance_floor": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": { "items": [{ "items": ["discyupgrade:dance_floor_tile"] }] }
+    }
+  }
+}

@@ -26,6 +26,8 @@ public final class TabRegistry {
                         output.accept(ItemRegistry.LASER_EMITTER.get());
                         output.accept(ItemRegistry.PARTY_LIGHT.get());
                         output.accept(ItemRegistry.STROBE_LIGHT.get());
+                        output.accept(ItemRegistry.DISCO_GUIDE.get());
+                        output.accept(ItemRegistry.DISCO_GOGGLES.get());
                     })
                     .build());
 

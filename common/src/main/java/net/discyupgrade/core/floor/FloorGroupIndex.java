@@ -102,6 +102,12 @@ public final class FloorGroupIndex {
         }
 
         UUID merged = neighborGroups.iterator().next();
+        FloorGroup target = GROUPS.get(merged);
+        if (target != null && target.tiles().size() >= net.discyupgrade.core.config.DiscyUpgradeConfig.maxTilesPerGroup) {
+            UUID newId = createGroup(null);
+            applyGroup(level, tile, pos, newId);
+            return;
+        }
         for (UUID other : neighborGroups) {
             if (!other.equals(merged)) mergeGroups(other, merged);
         }
@@ -123,6 +129,8 @@ public final class FloorGroupIndex {
 
     public static void assignTileToGroup(ServerLevel level, BlockPos pos, UUID groupId) {
         if (groupId == null || !GROUPS.containsKey(groupId)) return;
+        FloorGroup group = GROUPS.get(groupId);
+        if (group != null && group.tiles().size() >= net.discyupgrade.core.config.DiscyUpgradeConfig.maxTilesPerGroup) return;
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof DanceFloorTileBlockEntity tile)) return;
 
