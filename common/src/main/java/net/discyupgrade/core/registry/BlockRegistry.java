@@ -4,14 +4,13 @@ import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.Registrar;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.discyupgrade.DiscyUpgrade;
 import net.discyupgrade.core.block.*;
+import net.discyupgrade.core.item.TuningWrenchItem;
 import net.discyupgrade.core.util.ModIdentifier;
 
 import java.util.function.Supplier;
@@ -28,8 +27,8 @@ public final class BlockRegistry {
                     .lightLevel(state -> 3)
                     .noOcclusion()));
 
-    public static final RegistrySupplier<Block> DANCE_FLOOR_CONTROLLER = registerBlock("dance_floor_controller",
-            () -> new DanceFloorControllerBlock(BlockBehaviour.Properties.of()
+    public static final RegistrySupplier<Block> LIGHT_CONTROLLER = registerBlock("light_controller",
+            () -> new LightControllerBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.METAL)
                     .strength(2.0f)
                     .noOcclusion()));
@@ -55,7 +54,5 @@ public final class BlockRegistry {
         BLOCKS.register();
     }
 
-    public static void registerBlockColors() {
-        // Platform-specific registration in forge client
-    }
+    public static void registerBlockColors() {}
 }

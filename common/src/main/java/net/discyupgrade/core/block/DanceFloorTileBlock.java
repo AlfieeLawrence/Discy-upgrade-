@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.discyupgrade.core.floor.DanceFloorNetworkIndex;
+import net.discyupgrade.core.floor.FloorGroupIndex;
 import net.discyupgrade.core.registry.BlockEntityRegistry;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,7 +38,7 @@ public class DanceFloorTileBlock extends BaseEntityBlock {
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
-            DanceFloorNetworkIndex.onTilePlaced(serverLevel, pos);
+            FloorGroupIndex.onTilePlaced(serverLevel, pos);
         }
     }
 
@@ -47,7 +47,7 @@ public class DanceFloorTileBlock extends BaseEntityBlock {
         if (!state.is(newState.getBlock()) && !level.isClientSide && level instanceof ServerLevel serverLevel) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof DanceFloorTileBlockEntity tile) {
-                DanceFloorNetworkIndex.onTileRemoved(serverLevel, pos, tile.getNetworkId());
+                FloorGroupIndex.onTileRemoved(serverLevel, pos, tile.getGroupId());
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
@@ -63,8 +63,8 @@ public class DanceFloorTileBlock extends BaseEntityBlock {
         if (be instanceof DanceFloorTileBlockEntity tile && player.isShiftKeyDown()) {
             player.displayClientMessage(
                     net.minecraft.network.chat.Component.translatable(
-                            "message.discyupgrade.floor_network",
-                            tile.getNetworkId() == null ? "?" : tile.getNetworkId().toString().substring(0, 8)),
+                            "message.discyupgrade.floor_group",
+                            tile.getGroupId() == null ? "?" : FloorGroupIndex.getGroupName(tile.getGroupId())),
                     true);
             return InteractionResult.CONSUME;
         }

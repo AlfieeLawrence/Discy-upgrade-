@@ -17,17 +17,13 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.discyupgrade.core.floor.DanceFloorNetwork;
-import net.discyupgrade.core.registry.BlockEntityRegistry;
-import net.discyupgrade.core.screen.DanceFloorControllerMenus;
+import net.discyupgrade.core.screen.LightControllerMenus;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.UUID;
-
-public class DanceFloorControllerBlock extends BaseEntityBlock {
+public class LightControllerBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-    public DanceFloorControllerBlock(BlockBehaviour.Properties props) {
+    public LightControllerBlock(BlockBehaviour.Properties props) {
         super(props);
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
@@ -46,7 +42,7 @@ public class DanceFloorControllerBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new DanceFloorControllerBlockEntity(pos, state);
+        return new LightControllerBlockEntity(pos, state);
     }
 
     @Override
@@ -55,34 +51,29 @@ public class DanceFloorControllerBlock extends BaseEntityBlock {
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
-                                 InteractionHand hand, BlockHitResult hit) {
-        if (level.isClientSide) {
-            return InteractionResult.SUCCESS;
-        }
-
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof DanceFloorControllerBlockEntity controller)) {
-            return InteractionResult.PASS;
-        }
-
-        UUID networkId = controller.getLinkedNetworkId();
-        if (networkId == null) {
-            networkId = DanceFloorNetwork.findAdjacentNetwork(level, pos);
-            if (networkId != null) {
-                controller.setLinkedNetworkId(networkId);
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        if (!level.isClientSide) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof LightControllerBlockEntity controller) {
+                controller.linkTouchingFloors();
             }
         }
+    }
 
-        if (networkId == null) {
-            player.displayClientMessage(
-                    net.minecraft.network.chat.Component.translatable("message.discyupgrade.no_floor_linked"),
-                    true);
-            return InteractionResult.CONSUME;
-        }
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
+                                 InteractionHand hand, BlockHitResult hit) {
+        if (level.isClientSide) return InteractionResult.SUCCESS;
+
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof LightControllerBlockEntity controller)) return InteractionResult.PASS;
+
+        controller.linkTouchingFloors();
+        controller.pruneBrokenLinks();
 
         if (player instanceof ServerPlayer serverPlayer) {
-            DanceFloorControllerMenus.open(serverPlayer, controller);
+            LightControllerMenus.open(serverPlayer, controller);
         }
         return InteractionResult.CONSUME;
     }

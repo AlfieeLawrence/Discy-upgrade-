@@ -19,9 +19,9 @@ public final class BlockEntityRegistry {
                     .of(DanceFloorTileBlockEntity::new, BlockRegistry.DANCE_FLOOR_TILE.get())
                     .build(null));
 
-    public static final RegistrySupplier<BlockEntityType<DanceFloorControllerBlockEntity>> DANCE_FLOOR_CONTROLLER =
-            register("dance_floor_controller", () -> BlockEntityType.Builder
-                    .of(DanceFloorControllerBlockEntity::new, BlockRegistry.DANCE_FLOOR_CONTROLLER.get())
+    public static final RegistrySupplier<BlockEntityType<LightControllerBlockEntity>> LIGHT_CONTROLLER =
+            register("light_controller", () -> BlockEntityType.Builder
+                    .of(LightControllerBlockEntity::new, BlockRegistry.LIGHT_CONTROLLER.get())
                     .build(null));
 
     public static final RegistrySupplier<BlockEntityType<DiscoBallBlockEntity>> DISCO_BALL =

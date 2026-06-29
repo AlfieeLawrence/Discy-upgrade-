@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "discyupgrade:block/light_controller_side",
+    "down": "discyupgrade:block/light_controller_side",
+    "up": "discyupgrade:block/light_controller_top",
+    "north": "discyupgrade:block/light_controller_side",
+    "east": "discyupgrade:block/light_controller_side",
+    "south": "discyupgrade:block/light_controller_side",
+    "west": "discyupgrade:block/light_controller_side"
+  }
+}

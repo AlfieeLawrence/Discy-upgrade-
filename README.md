@@ -1,49 +1,52 @@
-# Discy Upgrade
+# Disco Lights
 
-A Minecraft 1.20.1 Forge mod that adds disco lighting and a programmable dance floor, inspired by the **Disc Design Studio (DDS)** color tools from [Discy](https://github.com/AlfieeLawrence/Discy-A-custom-Disc-mod-for-Minecraft-).
+A standalone Minecraft 1.20.1 Forge mod — **not** part of Discy. Adds disco lighting, programmable dance floors, and a central **Light Controller**.
 
-## Features
+## Blocks & items
 
-### Dance floor tiles
-- Place individual **Dance Floor Tiles** next to each other to form a linked network.
-- Each tile stores its own RGB color and syncs across clients.
+| Item | Purpose |
+|------|---------|
+| **Dance Floor Tile** | Colored floor segment; adjacent tiles auto-join the same group |
+| **Light Controller** | Controls all linked floors, disco balls, and lasers |
+| **Tuning Wrench** | Assign, disconnect, capture, and wireless-link floor groups and lights |
+| **Disco Ball** | Spinning ball with colored particles |
+| **Laser Emitter** | Redstone-powered colored laser beam |
 
-### Dance floor controller
-- Place a **Dance Floor Controller** beside your floor and right-click to open the GUI.
-- The controller shows every connected tile in its real-world layout (top-down grid).
-- Pick a tile, then use the DDS-style color wheel, brightness slider, quick palette, and hex field to change it.
-- **Apply to tile** updates one square; **Apply to all** paints the whole floor.
+## Dance floor groups
 
-### Disco ball
-- Hang-style disco ball block that spins when active.
-- Toggle with right-click or redstone power.
-- Emits colored sparkle particles while active.
+- Tiles placed **next to each other** merge into one floor group automatically.
+- Use the **Tuning Wrench** to:
+  - **Sneak + use** a tile → disconnect it from its group (even if still touching other tiles)
+  - **Use** a tile while the wrench holds a target group → assign that tile to the group (works across distance)
+  - **Use** a tile (empty wrench) → capture its group ID for wireless linking
+- Name groups from the Light Controller **Groups** tab.
 
-### Laser emitters
-- Directional blocks that shoot a colored laser beam when powered by redstone.
-- Beams stop at the first solid block they hit.
+## Light Controller linking
 
-## Building
+**Physical (touch):** Place the controller on a block beside dance floor tiles — it auto-links any touching floor groups.
+
+**Wireless:** Capture a floor group on the wrench (use a tile), then use the wrench on the Light Controller.
+
+**Multiple floors:** Link as many floor groups as you want to one controller. Switch between them in the **Floors** tab.
+
+**Lights:** Sneak+use a disco ball or laser with the wrench to capture it, then use the wrench on the controller.
+
+## Controller GUI tabs
+
+- **Floors** — pick a linked floor, view layout, paint tiles (DDS-style color wheel)
+- **Lights** — see linked disco balls & lasers; toggle spin and power
+- **Groups** — manage names and wrench instructions
+
+## Build
 
 ```bash
 ./gradlew :forge:build
 ```
 
-The remapped JAR is at `forge/build/libs/discyupgrade-forge-1.0.0.jar`.
-
-## Usage tips
-
-1. Craft dance floor tiles and lay out your pattern on one Y level.
-2. Place the controller adjacent to any tile in the floor.
-3. Open the controller, click tiles in the layout preview, and paint colors.
-4. Add a disco ball and laser emitters, then power the lasers with redstone for a full disco setup.
+Output: `forge/build/libs/discyupgrade-forge-1.0.0.jar`
 
 ## Requirements
 
-- Minecraft 1.20.1
-- Forge 47+
-- Architectury API
+- Minecraft 1.20.1, Forge 47+, Architectury API
 
-## License
-
-MIT
+MIT License

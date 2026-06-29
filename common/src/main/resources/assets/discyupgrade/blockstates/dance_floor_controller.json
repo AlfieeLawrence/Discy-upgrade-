@@ -1,8 +1,0 @@
-{
-  "variants": {
-    "facing=north": { "model": "discyupgrade:block/dance_floor_controller" },
-    "facing=south": { "model": "discyupgrade:block/dance_floor_controller", "y": 180 },
-    "facing=west": { "model": "discyupgrade:block/dance_floor_controller", "y": 270 },
-    "facing=east": { "model": "discyupgrade:block/dance_floor_controller", "y": 90 }
-  }
-}

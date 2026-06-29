@@ -11,6 +11,6 @@
     "D": { "item": "discyupgrade:dance_floor_tile" }
   },
   "result": {
-    "item": "discyupgrade:dance_floor_controller"
+    "item": "discyupgrade:light_controller"
   }
 }

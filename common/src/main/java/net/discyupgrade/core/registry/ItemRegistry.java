@@ -8,7 +8,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.discyupgrade.DiscyUpgrade;
-import net.discyupgrade.core.util.ModIdentifier;
+import net.discyupgrade.core.item.TuningWrenchItem;
 
 public final class ItemRegistry {
     public static final DeferredRegister<Item> ITEMS =
@@ -16,9 +16,12 @@ public final class ItemRegistry {
     public static final Registrar<Item> ITEM_REGISTRAR = ITEMS.getRegistrar();
 
     public static final RegistrySupplier<Item> DANCE_FLOOR_TILE = registerBlockItem(BlockRegistry.DANCE_FLOOR_TILE);
-    public static final RegistrySupplier<Item> DANCE_FLOOR_CONTROLLER = registerBlockItem(BlockRegistry.DANCE_FLOOR_CONTROLLER);
+    public static final RegistrySupplier<Item> LIGHT_CONTROLLER = registerBlockItem(BlockRegistry.LIGHT_CONTROLLER);
     public static final RegistrySupplier<Item> DISCO_BALL = registerBlockItem(BlockRegistry.DISCO_BALL);
     public static final RegistrySupplier<Item> LASER_EMITTER = registerBlockItem(BlockRegistry.LASER_EMITTER);
+
+    public static final RegistrySupplier<Item> TUNING_WRENCH = ITEMS.register("tuning_wrench",
+            () -> new TuningWrenchItem(new Item.Properties().stacksTo(1)));
 
     private static RegistrySupplier<Item> registerBlockItem(RegistrySupplier<Block> block) {
         return ITEM_REGISTRAR.register(block.getId(), () -> new BlockItem(block.get(), new Item.Properties()));
